@@ -1,0 +1,43 @@
+project_name: modemd
+
+release:
+  github:
+    owner: TheCacophonyProject
+    name: modemd
+  name_template: '{{.Tag}}'
+
+builds:
+- goos:
+  - linux
+  goarch:
+  - arm
+  goarm:
+  - "7"
+  main: .
+  ldflags: -s -w -X main.version={{.Version}}
+  binary: modemd
+
+nfpms:
+- vendor: The Cacophony Project
+  homepage: http://cacophony.org.nz/
+  maintainer: Cacophony Developers <coredev@cacophony.org.nz>
+  description: Controls the USB modems
+  license: GPL v3.0
+  file_name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Arch }}"
+  formats:
+    - deb
+  bindir: /usr/bin
+  contents:
+    - src: _release/modemd.service
+      dst: /etc/systemd/system/modemd.service
+    - src: _release/org.cacophony.modemd.conf
+      dst: /etc/dbus-1/system.d/org.cacophony.modemd.conf
+    - src: _release/uhubctl
+      dst: /usr/sbin/uhubctl
+  scripts:
+    postinstall: "_release/postinstall.sh"
+
+checksum:
+  name_template: '{{ .ProjectName }}_{{ .Version }}_checksums.txt'
+
+dist: dist
