@@ -118,7 +118,7 @@ func (s service) SetAPN(apn string) *dbus.Error {
 }
 
 func (s service) RunATCommand(atCommand string) (string, string, *dbus.Error) {
-	if !s.mc.ATReady {
+	if s.mc.Modem != nil && !s.mc.Modem.ATReady {
 		return "", "", makeDbusError("RunATCommand", errors.New("modem not ready for AT commands"))
 	}
 	totalOut, out, err := s.mc.RunATCommandTotalOutput(atCommand)

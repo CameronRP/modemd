@@ -55,7 +55,6 @@ type ModemController struct {
 	RetryFindModemInterval time.Duration
 	MaxOffDuration         time.Duration
 	MinConnDuration        time.Duration
-	ATReady                bool
 
 	lastOnRequestTime    time.Time
 	lastSuccessfulPing   time.Time
@@ -258,15 +257,17 @@ func (mc *ModemController) GetStatus() (map[string]interface{}, error) {
 	status["timestamp"] = time.Now().Format(time.RFC1123Z)
 	status["powered"] = mc.IsPowered
 	status["onOffReason"] = mc.onOffReason
-	status["ATReady"] = mc.ATReady
 
 	if mc.Modem != nil {
+		// Set details for modem
 		modem := make(map[string]interface{})
 		modem["name"] = mc.Modem.Name
 		modem["netdev"] = mc.Modem.Netdev
 		modem["vendor"] = mc.Modem.VendorProduct
+		modem["atReady"] = mc.Modem.ATReady
+		modem["simReady"] = mc.Modem.SimReady
 		modem["connectedTime"] = mc.connectedTime.Format(time.RFC1123Z)
-		if mc.ATReady {
+		if mc.Modem.ATReady {
 			modem["voltage"] = valueOrErrorStr(mc.readVoltage())
 			modem["temp"] = valueOrErrorStr(mc.readTemp())
 			modem["manufacturer"] = valueOrErrorStr(mc.getManufacturer())
@@ -276,7 +277,8 @@ func (mc *ModemController) GetStatus() (map[string]interface{}, error) {
 		}
 		status["modem"] = modem
 
-		if mc.ATReady {
+		// Set details for signal
+		if mc.Modem.ATReady {
 			signal := make(map[string]interface{})
 			signal["strength"] = valueOrErrorStr(mc.signalStrength())
 			signal["band"] = valueOrErrorStr(mc.readBand())
@@ -289,7 +291,10 @@ func (mc *ModemController) GetStatus() (map[string]interface{}, error) {
 				signal["accessTechnology"] = accessTechnology
 			}
 			status["signal"] = signal
+		}
 
+		// Set details for SIM card
+		if mc.Modem.ATReady {
 			simCard := make(map[string]interface{})
 			simCard["simCardStatus"] = valueOrErrorStr(mc.CheckSimCard())
 			simCard["ICCID"] = valueOrErrorStr(mc.readSimICCID())
@@ -711,7 +716,9 @@ func (mc *ModemController) SetModemPower(on bool) error {
 		}
 	} else {
 		_, _ = mc.RunATCommand("AT+CPOF")
-		mc.ATReady = false
+		if mc.Modem != nil {
+			mc.Modem.ATReady = false
+		}
 		log.Println("Triggering modem shutdown.")
 		if err := pinEn.Out(gpio.Low); err != nil {
 			return fmt.Errorf("failed to set modem power pin low: %v", err)

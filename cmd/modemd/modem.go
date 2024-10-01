@@ -13,6 +13,8 @@ type Modem struct {
 	Name          string
 	Netdev        string
 	VendorProduct string
+	ATReady       bool
+	SimReady      bool
 }
 
 // NewModem return a new modem from the config

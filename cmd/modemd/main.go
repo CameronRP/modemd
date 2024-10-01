@@ -158,13 +158,13 @@ func runMain() error {
 		for i := 0; i < 20; i++ {
 			_, err := mc.RunATCommand("AT")
 			if err == nil {
-				mc.ATReady = true
+				mc.Modem.ATReady = true
 				log.Println("AT command responding.")
 				break
 			}
 			time.Sleep(3 * time.Second)
 		}
-		if !mc.ATReady {
+		if !mc.Modem.ATReady {
 			log.Println("Making noModemATCommandResponse event.")
 			eventclient.AddEvent(eventclient.Event{
 				Timestamp: time.Now(),
@@ -173,24 +173,23 @@ func runMain() error {
 			return errors.New("failed to get AT command response")
 		}
 		time.Sleep(5 * time.Second) // Wait a little bit longer or else might get AT ERRORS
-		mc.ATReady = true
+		mc.Modem.ATReady = true
 		if err := mc.DisableGPS(); err != nil {
 			return err
 		}
 
 		// ========== Checking SIM card. =============
 		log.Println("Checking SIM card.")
-		simReady := false
 		for retries := 5; retries > 0; retries-- {
 			simStatus, err := mc.CheckSimCard()
 			if err == nil && simStatus == "READY" {
-				simReady = true
+				mc.Modem.SimReady = true
 				break
 			}
 			log.Printf("SIM card not ready. Will cycle power %d more time(s) to find SIM card", retries)
 			time.Sleep(5 * time.Second)
 		}
-		if !simReady {
+		if !mc.Modem.SimReady {
 			mc.failedToFindSimCard = true
 			makeModemEvent("noModemSimCard", &mc)
 			continue
