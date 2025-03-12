@@ -289,6 +289,7 @@ func (mc *ModemController) GetStatus() (map[string]interface{}, error) {
 				signal["strength"] = signalStrength
 				signal["bitErrorRate"] = bitErrorRate
 			}
+			signal["band"] = valueOrErrorStr(mc.readBand())
 			provider, accessTechnology, err := mc.readProvider()
 			if err != nil {
 				signal["provider"] = err.Error()
@@ -544,6 +545,18 @@ func (mc *ModemController) FindModem() bool {
 		}
 	}
 }
+
+/* Bit error rate
+0 – <0.01%
+1 – 0.01% --- 0.1%
+2 – 0.1% --- 0.5%
+3 – 0.5% --- 1.0%
+4 – 1.0% --- 2.0%
+5 – 2.0% --- 4.0%
+6 – 4.0% --- 8.0%
+7 – >=8.0%
+99 – not known or not detectable
+*/
 
 func (mc *ModemController) signalStrength() (string, string, error) {
 	out, err := mc.RunATCommand("AT+CSQ")
