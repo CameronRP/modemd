@@ -870,10 +870,6 @@ func (mc *ModemController) shouldBeOnWithReason() (bool, string) {
 		return false, fmt.Sprintf("Modem should be off because it was requested to stay off until %s.", mc.stayOffUntil.Format("2006-01-02 15:04:05"))
 	}
 
-	if time.Now().Before(mc.stayOnUntil) {
-		return true, fmt.Sprintf("Modem should be on because it was requested to stay on until %s.", mc.stayOnUntil.Format("2006-01-02 15:04:05"))
-	}
-
 	if mc.failedToFindModem {
 		return false, "Modem should be off because it could not be found on boot."
 	}
@@ -884,6 +880,10 @@ func (mc *ModemController) shouldBeOnWithReason() (bool, string) {
 
 	if mc.Modem != nil && mc.Modem.SimCardStatus == SimCardFailed {
 		return false, "Modem should be off because it failed to find a SIM card."
+	}
+
+	if time.Now().Before(mc.stayOnUntil) {
+		return true, fmt.Sprintf("Modem should be on because it was requested to stay on until %s.", mc.stayOnUntil.Format("2006-01-02 15:04:05"))
 	}
 
 	if time.Since(mc.lastFailedConnection) < mc.RetryInterval {
